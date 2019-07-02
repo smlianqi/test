@@ -1,0 +1,44 @@
+public class Person {
+    @QuerySqlField(index = true)
+    public Long id;
+    @QuerySqlField(index = true)
+    public Long companyId;
+    @QuerySqlField(groups= {"A"})
+    public String firstName;
+    @QuerySqlField(groups= {"A"})
+    public String lastName;
+    @QuerySqlField(orderedGroups={@QuerySqlField.Group(name = "B", order = 0)})
+    public String resume;
+    @QuerySqlField(orderedGroups={@QuerySqlField.Group(name = "B", order = 1, descending = true)})
+    public double salary;
+}
+//------------------------------------------------------
+
+上述用例展示的就是分组索引，我们一共做了两种分组方式，一种是以group的形式，另外就是以orderFroups形式。区别还是很大的，我从头开始讲：
+
+@QuerySqlField是以个注解，维护着String[]形式的groups属性个其内部类Group[]的orderGroups,这两个都是进行分组索引的，我先分别讲解功能，然后再剖析其区别：
+//------------------------------------------------------
+1.groups:这种形式的分组，可以将多个字段，联合成一个组索引，我们在上述代码中是以A形式命名的组索引，这样，lastname和firstname都会被联合成一个组索引，
+类似于（firstname asc,lastname,asc）.
+我们设想一个这样的情景：
+select * from Person where Person.firstname = ? and Person.lastname = ?。
+
+如果按照我们之前的方式，即单个属性维持自己的索引，也就是@QuerySqlField（index=true）的话，我们为属性firstname和lastname都加上这个注解，
+效率还是没有我们现在的这种分组形式快！！！为什么呢？？因为在Ignite中，SQL引擎只能在查询中每表出现一个索引。所以，即使你在每个属性上都加了索引，
+SQL引擎只会选取一个索引来加速我们的SQL操作。因此组索引就派上用场了。在复杂查询时候，组索引可以显著改善我们的查询速度。groups属性后跟的是一个数组，
+因为该属性是String[]，所以只能写一个name值，同一组的，名字要相同，你如果要为一个属性设置多个多个组，那就写多个值
+
+//------------------------------------------------------
+2.orderGroups：这种形式的分组，与上述基本类似，唯一区别则是，orderGroup做为注解@QuerySqlField的一个属性，其类型签名是其内部类Group形式的，它是由自己的
+属性的。我们来看我们的样例中的注释，即可弄明白。我着重讲一下其属性，
+①name：同上，就是分组的名字，相同组内的要用一致的名字。
+②descending：是否降序排序，默认是false，即asc，设置为true的话就是desc了，那么我们可以预见到我们的索引B是长的这个样子（salary desc,resume asc）.
+这样的好处是但我们在
+SQL：select * from Person order by salary desc,resume asc
+
+中需要做排序操作时候，而且还是逆序排序，那么这种方式可以加快速度，因为我们的索引已经排好序了，但是如果使用上述的groups形式，它只能产生类似于
+（salary asc,resume asc）的索引，效率还是低于我们以orderGroups形式产生的索引的。③order:这个值必须设置，定义组中该字段的排序顺序。参考在descending讲的，
+为什么salary会在前面，以及我写的SQL中排序的先后顺序。
+
+PS:注意啊各位：
+在@QuerySqlField(orderedGroups={...})之外使用@QuerySqlField.Group注释字段,是无效的。所以，按照我写的这样继续拓展即可。

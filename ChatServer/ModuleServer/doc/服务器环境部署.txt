@@ -1,0 +1,61 @@
+阿里云服务器地址
+
+外网ip：120.27.126.214
+内网IP：10.174.193.214
+----------------
+登录
+mau...
+j2...79
+----------------
+hadoop 
+j2...87
+----------------
+root
+YIN...shi...2014-03..
+----------------
+终端：Y...s...14
+
+
+===========================================
+安装mysql
+
+wget dev.mysql.com/get/mysql-community-release-el6-5.noarch.rpm
+yum localinstall mysql-community-release-el6-5.noarch.rpm
+yum-config-manager --disable mysql55-community
+yum-config-manager --enable mysql56-community
+yum-config-manager --disable mysql57-community-dmr
+
+yum install mysql-community-server
+
+service mysqld start 启动
+service mysqld stop 停止
+chkconfig mysqld on
+
+----------------------------
+配置权限
+
+mysql 配置
+
+方法一：
+mysql -u root
+mysql> SET PASSWORD FOR 'root'@'localhost' = PASSWORD('1q2w3e4r');
+
+----------------------------
+创建数据库
+
+CREATE DATABASE my_test;
+
+===========================================
+
+外网服务客户端访问
+逻辑服
+ip: 120.27.126.214
+port: 14120
+
+===========================================
+
+FKRquSqqVC3uZgs
+
+
+
+

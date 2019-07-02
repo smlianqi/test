@@ -1,0 +1,48 @@
+syntax = "proto3";
+option java_package = "com.elex.im.common.message.proto";
+option java_outer_classname = "InnerMessage";
+
+//-----------------------------------------
+//内部指令
+
+//网关指令 99900
+//99901绑定socket Up
+message BindingSocketUp {
+	enum MessageEnum{
+		First = 0; //第一个值必须是0
+		CommondId = 99901;
+	};
+	string serverId = 1;	//对应FunctionId
+	string token = 2;		//验证码
+	uint32 index = 3;		//连接对应的索引
+}
+
+//99902绑定socket Down
+message BindingSocketDown {
+	enum MessageEnum{
+		First = 0; //第一个值必须是0
+		CommondId = 99902;
+	};
+}
+
+//99903 ping指令
+message PingCheckUp {
+	enum MessageEnum{
+		First = 0; //第一个值必须是0
+		CommondId = 99903;
+	};
+}
+
+//99904 广播指令
+message BroadcastUp {
+	enum MessageEnum{
+		First = 0; //第一个值必须是0
+		CommondId = 99904;
+	};
+	uint32 broadcastType=1;			//1-指定用户转发，2-全服转发
+	uint32 commandId=2;				//指令id
+	bytes content=3;				//要转发的内容（直接封装好的proto信息）
+	//类型为1用到
+	repeated string targetUids=4;	//转发目标
+}
+

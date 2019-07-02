@@ -1,0 +1,201 @@
+// Generated from ChatProto.proto
+
+namespace com.elex.im.message.flat;
+
+enum CommondId_Chat : uint32{
+	CreateChatRoomUp = 20001, 
+	CreateChatRoomDown = 20002, 
+	ManagerChatRoomMemberUp = 20003,
+	ManagerChatRoomMemberDown = 20004,
+	GainChatMessageUp = 20021,
+	GainChatMessageDown = 20022,
+	SendChatMessageUp = 20023,
+	SendChatMessageDown = 20024,
+	TranslationMessageUp = 20025,
+	TranslationMessageDown = 20026,
+}
+
+// 用户信息
+table ChatUserInfo{
+	uid:string;				// 用户信息
+	userType:uint; 			// 用户类型 0-user,1-server,2-npc,3-gm
+	languageType:string; 		// 语言类型
+}
+
+table MessageContent {
+	content:string;			// 内容（原文）
+	languageType:string; 	// 语言类型
+}
+
+// 聊天消息
+table ChatMessageInfo {
+  roomId:string;				// 房间唯一id
+  order:ulong;					// 房间消息序列
+  uid:string;					// 所属用户
+  atUids:[string];				// AT的用户id，可以为空
+  sendedTime:ulong;				// 客户端发送消息时的时间（客户端生成）
+  receivedTime:ulong;			// 服务端接收到消息时的时间 （服务端生成）
+  contentType:uint; 			// 内容类型（0 表示文本消息,1 战报）
+  content:string;				// 内容（原文）
+  translation:[MessageContent]; // 翻译的内容（包含多个语言）
+  
+  clientExt:string;				// 客户端扩展字段
+  serverExt:string;				// 服务端扩展字段
+}
+
+// 房间信息
+table ChatRoomInfo {
+  roomId:string;		// 房间唯一id
+  roomType:uint;		// 聊天室类型（应用级别的全服，单聊，群）
+  admin:string;			// 管理员
+  createTime:ulong;		// 创建时间
+  name:string;			// 房间名字
+}
+
+// 聊天房间成员关系信息
+table ChatRoomMemberInfo {
+  uid:string;			// 用户信息
+  roomId:string;		// 房间唯一id
+  lastOrder:ulong;		// 最后的序列
+  atOrders:[ulong];		// AT的消息序列，看完就清掉
+  state:uint;			// 状态 0正常 1移除
+}
+
+table ChatRoomMessageInfo {
+  chatRoom:ChatRoomInfo;				//房间信息
+  self:ChatRoomMemberInfo;				//自己的信息
+  chatMessage:[ChatMessageInfo];		//聊天信息
+  lastOrder:ulong;						//之前读到的消息队列
+  users:[ChatUserInfo];					//全部成员信息（Group，和单聊类型有全部的，其他类型只有一个）
+  roomType:uint;			// 这里加个聊天类型为了逻辑服判断走不同的逻辑
+}
+
+//20000开始
+//----------------------------
+//房间管理
+
+//20001创建房间Up（群聊需要发送）
+
+table CreateChatRoomUp {
+	// 涉及到权限好友管理，现在信内部服务
+  admin:string;				// 管理员
+  uid:[string];				// 用户id
+  roomType:uint;			// 房间类型
+  //类型为 工会4 ,区聊5 需要发送
+  roomId:string;			// 房间id
+}
+
+//20002创建房间Down
+table CreateChatRoomDown {
+  roomId:string;			// 房间id
+  roomType:uint;			// 房间类型
+  
+  //如果类型为3群有以下内容（转发给其他用户）
+  uid:[string];				// 用户id
+  admin:string;				// 管理员
+}
+
+//20003管理房间成员Up
+table ManagerChatRoomMemberUp {
+	// 涉及到好友管理，现在信内部服务
+  modifyType:uint;			// 0添加 1移除
+  roomId:string;			// 房间id
+  uid:[string];				// 用户ids
+}
+
+//20004管理房间成员Down
+table ManagerChatRoomMemberDown {
+	//如果类型为3群有以下内容（转发给其他用户）
+  modifyType:uint;			// 0添加 1移除
+  roomId:string;			// 房间id
+  uid:[string];				// 用户ids
+  
+  roomType:uint;			// 这里加个聊天类型为了逻辑服判断走不同的逻辑
+}
+
+//----------------------------
+table AllNewestCondition{
+	regionRoomId:string;	//区房间id
+	unionRoomId:string;		//联盟房间id
+}
+
+table RoomMultiCondition{
+	roomId:string;		// 房间id
+	roomType:uint32;		// 房间类型
+	order:[ulong];			// 指定需要
+}
+
+table RoomPageCondition{
+	roomId:string;			// 房间id
+	roomType:uint32;		// 房间类型
+	order:ulong;			// 指定需要（2类型翻页查询是1个值）
+	count:uint;				// 每页数量（小于等于10）
+	isNewest:bool;			// true获取order位置最新数据，反之最老数据
+}
+
+table RoomNewestCondition{
+	roomId:string;			// 房间id
+	roomType:uint32;		// 房间类型
+}
+
+//20021获取聊天消息Up
+table GainChatMessageUp {
+  uid:string;			// 用户id（player-不用发此字段，需要登录；server-信内部服务）
+  gainType:uint;		// 0-全部；1-指定房间的多个查询；2-指定房间的翻页查询；3-指定房间的最新数据
+  
+  sendedTime:ulong;		// 客户端发送消息时的时间（客户端生成）
+  
+  allNewest:AllNewestCondition; 	//参数
+  roomMulti:RoomMultiCondition; 	//参数
+  roomPage:RoomPageCondition; 		//参数
+  roomNewest:RoomNewestCondition; 	//参数
+}
+
+//20022获取聊天消息Down
+table GainChatMessageDown {
+  chatRoomMessage:[ChatRoomMessageInfo];//房间聊天消息
+  sendedTime:ulong;						// 客户端发送消息时的时间（客户端生成）
+}
+
+//20023发送聊天消息
+table SendChatMessageUp {
+  uid:string;						// 用户id（player-不用发此字段，需要登录；server-信内部服务）
+  contentType:uint; 				// 内容类型（0 表示文本消息,1 战报）
+  content:string;					// 消息内容
+  sendedTime:ulong;					// 客户端发送消息时的时间（客户端生成）
+  roomType:uint;					// 聊天室类型（应用级别的全服，单聊，群，工会，区）
+  
+  //群聊,工会,区 有以下字段
+  roomId:string;					// 房间id(全服固定id，用户组合id，工会id)
+  //群聊有以下字段
+  atUids:[string];					// AT的用户id，可以为空
+  //单聊有以下字段
+  targetUid:string;					// 单聊目标人 
+  clientExt:string;					// 客户端扩展字段
+  serverExt:string;					// 服务端扩展字段
+}
+
+//20024发送聊天消息
+table SendChatMessageDown {
+  chatRoom:ChatRoomInfo;			//房间信息（如果单聊，房间可能现创建）
+  chatMessage:ChatMessageInfo;		//消息
+  roomType:uint;					//这里加个聊天类型为了逻辑服判断走不同的逻辑
+}
+
+//20025 翻译消息
+table TranslationMessageUp {
+  roomId:string;					// 房间唯一id
+  order:ulong;						// 房间消息序列
+  
+  roomType:uint;					// 这里加个聊天类型为了逻辑服判断走不同的逻辑
+}
+
+//20026 翻译消息
+table TranslationMessageDown {
+  roomId:string;					// 房间唯一id
+  order:ulong;						// 房间消息序列
+  translation:[MessageContent]; 	// 翻译的内容（包含多个语言）
+  
+  roomType:uint;					// 这里加个聊天类型为了逻辑服判断走不同的逻辑
+  isActive:bool;					// 是否为主动请求翻译
+}

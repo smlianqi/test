@@ -1,0 +1,45 @@
+syntax = "proto3";
+option java_package = "com.elex.im.message.proto";
+option java_outer_classname = "UserMessage";
+
+//----------------------------
+//10001_角色登录请求
+message UserLoginUp {
+	enum MessageEnum{
+		First = 0; //第一个值必须是0
+		CommondId = 10001;
+	};
+	uint32 userType=1; //用户类型 0-user,1-server,2-npc,3-gm
+	int64 userId = 2; //用户id
+	string token=3; //token
+	string languageType=4; //语言类型（走标准ios code）
+}
+
+//10002_角色登录回复
+message UserLoginDown {
+	enum MessageEnum{
+		First = 0; 		//第一个值必须是0
+		CommondId = 10002;
+	};
+	uint32 userType=1; //用户类型 0-user,1-server,2-npc,3-gm
+	string functionType=2; //功能类型
+	string sid=3; //服务器id
+}
+   
+//10003_角色登出请求
+message UserLogoutUp { 
+	enum MessageEnum{
+		First = 0; //第一个值必须是0
+		CommondId = 10003;
+	};
+	int64 userId = 1; //用户id
+}
+
+//10004_修改用户语言请求
+message ModifyLanguageUp { 
+	enum MessageEnum{
+		First = 0; //第一个值必须是0
+		CommondId = 10004;
+	};
+	string languageType=1; //语言类型
+}
