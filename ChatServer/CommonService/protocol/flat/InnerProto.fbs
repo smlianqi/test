@@ -1,0 +1,37 @@
+// Generated from InnerProto.proto
+
+namespace com.elex.im.common.message.flat;
+
+//内部指令
+
+enum CommondId_Inner : uint32{
+	BindingSocketUp = 99901, 
+	BindingSocketDown = 99902, 
+	PingCheckUp = 99903, 
+	BroadcastUp = 99904, 
+}
+
+//网关指令 99900
+//99901绑定socket Up
+table BindingSocketUp {
+  serverId:string;			//对应FunctionId
+  token:string;				//验证码
+  index:uint;				//连接对应的索引
+}
+
+//99902绑定socket Down
+table BindingSocketDown {
+}
+
+//99903 ping指令
+table PingCheckUp {
+}
+
+//99904 广播指令
+table BroadcastUp {
+	broadcastType:uint;		//1-指定用户转发，2-全服转发
+	commandId:uint;			//指令id
+	content:[ubyte];		//要转发的内容（直接封装好的proto信息）
+	//类型为1用到
+	targetUids:[string];	//转发目标
+}

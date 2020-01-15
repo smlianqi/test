@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE configuration PUBLIC "-//mybatis.org//DTD Config 3.0//EN" "http://mybatis.org/dtd/mybatis-3-config.dtd">
+
+<configuration> 
+	<mappers>
+		<mapper resource="com/galaxyworld/slgx/dao/account/AccountMapper.xml" />
+		<mapper resource="com/galaxyworld/slgx/dao/token/TokenMapper.xml" />
+		<mapper resource="com/galaxyworld/slgx/dao/hero/HeroMapper.xml" />
+		<mapper resource="com/galaxyworld/slgx/dao/userinfo/UserInfoMapper.xml" />
+		<mapper resource="com/galaxyworld/slgx/dao/userattr/UserAttrMapper.xml" />
+		<mapper resource="com/galaxyworld/slgx/dao/userscore/UserScoreMapper.xml" />
+	</mappers>
+</configuration>

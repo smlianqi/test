@@ -1,0 +1,257 @@
+﻿syntax = "proto3";
+option java_package = "com.elex.im.message.proto";
+option java_outer_classname = "ChatMessage";
+
+//--- 消息内容格式 ---
+//0 文本类型:{"msg":"xxx{0}x","pamams":["1:1",""]}
+//1 战报类型:{"msg":"xxxx","attack":{"uid":"xxx"},"defense":{"uid":"xxx"}}
+//2 联盟日志类型:{"gdsId":"" , "params":[]}
+//-------------------
+
+// 用户信息
+message ChatUserInfo{
+	string uid=1;				// 用户信息
+	uint32 userType=2; 			// 用户类型 0-user,1-server,2-npc,3-gm
+	string languageType=3; 		// 语言类型（走标准ios code）
+}
+
+// 聊天消息
+message ChatMessageInfo{
+	string roomId=1;					// 房间唯一id
+	uint64 order=2;						// 房间消息序列
+	string uid=3;						// 所属用户
+	repeated string atUids=4;			// AT的用户id，可以为空
+	uint64 sendedTime=5;				// 客户端发送消息时的时间（客户端生成）
+	uint64 receivedTime=6;				// 服务端接收到消息时的时间 （服务端生成）
+	uint32 contentType=7; 				// 内容类型（0 表示文本消息,1 战报）
+	string content=8; 					// 内容（原文）
+	map<string,string> translation=9; 	// 翻译的内容（包含多个语言）
+	
+	string clientExt=10;				// 客户端扩展字段
+	string serverExt=11;				// 服务端扩展字段
+}
+
+// 房间信息
+message ChatRoomInfo{
+	string roomId=1;			// 房间唯一id
+	uint32 roomType=2;			// 聊天室类型（应用级别的全服 1，单聊 2，群 3,工会4 ,区聊5 ）
+	string admin=3;				// 管理员
+	uint64 createTime=4;		// 创建时间
+	string name=5;				// 房间名字
+}
+
+// 聊天房间成员关系信息
+message ChatRoomMemberInfo{
+	string uid=1;				// 用户信息
+	string roomId=2;			// 房间唯一id
+	uint64 lastOrder=3;			// 最后的序列
+	repeated uint64 atOrders=4;	// AT的消息序列，看完就清掉
+	uint32 state=5;				// 状态 0正常 1移除
+}
+
+message ChatRoomMessageInfo{
+	ChatRoomInfo chatRoom=1;					//房间信息
+	ChatRoomMemberInfo self=2;					//自己的信息
+	repeated ChatMessageInfo chatMessage=3;		//聊天信息
+	uint64 lastOrder=4;							//之前读到的消息队列
+	repeated ChatUserInfo users=5;				//全部成员id（Group，和单聊类型有全部的，其他类型只有一个）
+	uint32 roomType=6;							// 这里加个聊天类型为了逻辑服判断走不同的逻辑
+}
+
+//20000开始
+//----------------------------
+//房间管理
+
+//20001创建房间Up（群聊需要发送）
+message CreateChatRoomUp{
+	enum MessageEnum{
+		First = 0; //第一个值必须是0
+		CommondId = 20001;
+	};
+	// 涉及到权限好友管理，现在信内部服务
+	string admin=1;				// 管理员
+	repeated string uid=2;		// 用户id
+	uint32 roomType=3;			// 房间类型
+	
+	//类型为 工会4 ,区聊5 需要发送
+	string roomId=4;			// 房间id
+}
+
+//20002创建房间Down
+message CreateChatRoomDown{
+	enum MessageEnum{
+		First = 0; //第一个值必须是0
+		CommondId = 20002;
+	};
+	string roomId=1;			// 房间id
+	uint32 roomType=2;			// 房间类型
+	
+	//如果类型为3群有以下内容（转发给其他用户）
+	repeated string uid=3;		// 用户id
+	string admin=4;				// 管理员
+}
+
+//20003管理房间成员Up
+message ManagerChatRoomMemberUp{
+	enum MessageEnum{
+		First = 0; //第一个值必须是0
+		CommondId = 20003;
+	};
+	// 涉及到好友管理，现在信内部服务
+	uint32 modifyType=1;		// 0添加 1移除
+	string roomId=2;			// 房间id
+	repeated string uid=3;		// 用户ids
+}
+
+//20004管理房间成员Down
+message ManagerChatRoomMemberDown{
+	enum MessageEnum{
+		First = 0; //第一个值必须是0
+		CommondId = 20004;
+	};
+	
+	//如果类型为3群有以下内容（转发给其他用户）
+	uint32 modifyType=1;		// 0添加 1移除
+	string roomId=2;			// 房间id
+	repeated string uid=3;		// 用户ids
+	
+	uint32 roomType=4;			// 这里加个聊天类型为了逻辑服判断走不同的逻辑
+}
+
+//----------------------------
+message AllNewestCondition{
+	string regionRoomId=1;	//区房间id
+	string unionRoomId=2;	//联盟房间id
+	uint32 singleRoomFetchSize=3;  //单聊房间一次获取的最新纪录条数，值不能超过20，否则以20算。如果小于等于0，则也以20算
+}
+
+message RoomMultiCondition{
+	string roomId=1;			// 房间id
+	uint32 roomType=2;			// 房间类型
+	repeated uint64 order=3;	// 指定需要（2类型翻页查询是1个值）
+}
+
+message RoomPageCondition{
+	string roomId=1;			// 房间id
+	uint32 roomType=2;			// 房间类型
+	uint64 order=3;				// 指定需要（2类型翻页查询是1个值）
+	uint32 count=4;				// 每页数量（小于等于10）
+	bool isNewest=5;			// true获取order位置最新数据，反之最老数据
+}
+
+message RoomNewestCondition{
+	string roomId=1;			// 房间id
+	uint32 roomType=2;			// 房间类型
+}
+
+//20021获取聊天消息Up
+message GainChatMessageUp{
+	enum MessageEnum{
+		First = 0; //第一个值必须是0
+		CommondId = 20021;
+	};
+	string uid=1;						// 用户id（player-不用发此字段，需要登录；server-信内部服务）
+	uint32 gainType=2;					// 0-全部最新数据；1-指定房间的多个查询；2-指定房间的翻页查询；3-指定房间的最新数据
+	
+	uint64 sendedTime=3;				// 客户端发送消息时的时间（客户端生成）
+	
+	AllNewestCondition allNewest=4; 	//参数
+	RoomMultiCondition roomMulti=5; 	//参数
+	RoomPageCondition roomPage=6; 		//参数
+	RoomNewestCondition roomNewest=7; 	//参数
+}
+
+//20022获取聊天消息Down
+message GainChatMessageDown{
+	enum MessageEnum{
+		First = 0; //第一个值必须是0
+		CommondId = 20022;
+	};
+	repeated ChatRoomMessageInfo chatRoomMessage=1;	// 房间聊天消息
+	
+	uint64 sendedTime=2;							// 客户端发送消息时的时间（客户端生成）
+}
+
+//20023发送聊天消息
+message SendChatMessageUp {
+	enum MessageEnum{
+		First = 0; //第一个值必须是0
+		CommondId = 20023;
+	};
+	string uid=1;				// 用户id（player-不用发此字段，需要登录；server-信内部服务）
+	uint32 contentType=2; 		// 内容类型（0 表示文本消息,1 战报）
+	enum ContentValueType
+	{
+		Value = 0;			// 普通值
+		Language_Key = 1;	// 多语言key
+	}
+	string content=3;			// 消息内容
+	uint64 sendedTime=4;		// 客户端发送消息时的时间（客户端生成）
+	uint32 roomType=5;			// 聊天室类型（应用级别的全服，单聊，群，工会，区）
+	
+	//群聊有以下字段
+	repeated string atUids=6;	// AT的用户id，可以为空
+	//群聊,工会,区 有以下字段
+	string roomId=7;			// 房间id(全服固定id，用户组合id，工会id)
+	//单聊有以下字段
+	string targetUid=8;			// 单聊目标人 
+	string clientExt=9;			// 客户端扩展字段
+	string serverExt=10;		// 服务端扩展字段
+}
+
+//20024发送聊天消息
+message SendChatMessageDown {
+	enum MessageEnum{
+		First = 0; //第一个值必须是0
+		CommondId = 20024;
+	};
+	ChatRoomInfo chatRoom=1;		//房间信息（如果单聊，房间可能现创建）
+	ChatMessageInfo chatMessage=2;	//消息
+	uint32 roomType=3;				//这里加个聊天类型为了逻辑服判断走不同的逻辑
+}
+
+//20025 翻译消息
+message TranslationMessageUp {
+	enum MessageEnum{
+		First = 0; //第一个值必须是0
+		CommondId = 20025;
+	};
+	string roomId=1;			// 房间唯一id
+	uint64 order=2;				// 房间消息序列
+	
+	uint32 roomType=3;			// 这里加个聊天类型为了逻辑服判断走不同的逻辑
+}
+
+//20026 翻译消息
+message TranslationMessageDown {
+	enum MessageEnum{
+		First = 0; //第一个值必须是0
+		CommondId = 20026;
+	};
+	string roomId=1;					// 房间唯一id
+	uint64 order=2;						// 房间消息序列
+	map<string,string> translation=3; 	// 翻译的内容（包含多个语言）
+	
+	uint32 roomType=4;					// 这里加个聊天类型为了逻辑服判断走不同的逻辑
+	bool isActive=5;					// 是否为主动请求翻译
+}
+
+//20029 客户端告诉服务端他所在的所有聊天室中所浏览到的以后消息位置(order)
+message LastMessageOrderInChatUp {
+    enum MessageEnum{
+		First = 0; //第一个值必须是0
+		CommondId = 20029;
+	};
+	string userId = 1;
+	map<string,string> roomToMsgOrder = 2; 	//聊天室id到消息lastOrder的映射
+}
+
+//20030 服务端告诉客户端他所在的所有聊天室中所浏览到的以后消息位置(order)
+message LastMessageOrderInChatDown {
+    enum MessageEnum{
+		First = 0; //第一个值必须是0
+		CommondId = 20030;
+	};
+	string userId = 1;
+	map<string,string> roomToMsgOrder = 2; 	//聊天室id到消息lastOrder的映射
+}

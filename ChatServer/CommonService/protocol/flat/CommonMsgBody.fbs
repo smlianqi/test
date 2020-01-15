@@ -1,0 +1,10 @@
+// Generated from CommonMsgBody.proto
+
+namespace com.elex.im.common.message.flat;
+
+//通用消息体
+table CommonMsgBody {
+  version:uint32;		//指令版本号
+  commandId:uint32;		//指令id
+  content:[ubyte];		//消息内容
+}

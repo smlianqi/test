@@ -1,0 +1,5 @@
+syntax = "proto3";
+option java_package = "com.elex.im.message.proto";
+option java_outer_classname = "GateMessage";
+
+//-----------------------------------------------
