@@ -1,4 +1,0 @@
-zookeeper权限
-
-scheme：digest
-auth：galaxy_world:yinhe_shijie
